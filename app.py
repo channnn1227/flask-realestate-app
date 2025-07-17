@@ -1,49 +1,34 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 import requests
 import xml.etree.ElementTree as ET
-import datetime
+from datetime import datetime
 
 app = Flask(__name__)
-SERVICE_KEY = "Ey6bVfRVh4Cq1rGSFXGB0CwrvjExVFojpYYkv+VTYJDhV52GrxrzmhM2ydvKtcdq4ehvHxmW9dXKY00VvYzg=="
-LAWDCODE = "4128112300"
 
-def fetch_real_estate_data(region_code, year_month):
-    url = "https://apis.data.go.kr/1613000/AptTradeInfoService1/getTradeAptDetail"
+# 국토부 API 기본 설정
+API_URL = "http://apis.data.go.kr/1613000/AptLeaseInfoDetailSvc1/getAptLeaseDetail"
+API_KEY = "Ey6bVfRVh4Cq1rGSFXGB0CwrvjExVFojpYYkv+VTYJDhV52GrxrzmhM2ydvKtcdq4ehvHxmW9dXKY00VvYzg=="
+LAWD_CODES = {
+    "월곶동": "4139031000",
+    "배곧동": "4139051000"
+}
+
+def fetch_deal_data(lawd_cd, deal_ymd):
     params = {
-        "serviceKey": SERVICE_KEY,
-        "LAWD_CD": region_code,
-        "DEAL_YMD": year_month,
+        "serviceKey": API_KEY,
+        "LAWD_CD": lawd_cd,
+        "DEAL_YMD": deal_ymd,
         "numOfRows": 100
     }
-    res = requests.get(url, params=params)
-    root = ET.fromstring(res.content)
-    items = root.findall(".//item")
 
-    results = []
-    for item in items:
-        area = float(item.findtext("전용면적", "0"))
-        if 83 <= area <= 85:
-            results.append({
-                "apartment": item.findtext("아파트", "-"),
-                "area": f"{area:.2f}",
-                "price": item.findtext("거래금액", "-").strip(),
-                "floor": item.findtext("층", "-"),
-                "date": f"{item.findtext('년')}.{item.findtext('월')}.{item.findtext('일')}"
-            })
-    return results
+    try:
+        response = requests.get(API_URL, params=params, timeout=10)
+        if response.status_code != 200:
+            return []
+        root = ET.fromstring(response.content)
 
-@app.route("/deals")
-def show_deals():
-    today = datetime.date.today()
-    data = []
-    for i in range(12):  # 최근 12개월
-        ym = (today - datetime.timedelta(days=30 * i)).strftime("%Y%m")
-        data += fetch_real_estate_data(LAWDCODE, ym)
-    return render_template("deals.html", deals=data)
-
-@app.route("/")
-def home():
-    return "<h1>실거래가 웹앱에 오신 것을 환영합니다!</h1><p><a href='/deals'>실거래가 보기</a></p>"
-
-if __name__ == "__main__":
-    app.run(debug=True)
+        items = []
+        for item in root.findall(".//item"):
+            apt = {
+                "단지명": item.findtext("단지명", default="N/A"),
+                "전
