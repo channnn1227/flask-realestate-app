@@ -1,0 +1,23 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>배곧동 전용84㎡ 실거래가</title>
+</head>
+<body>
+  <h1>배곧 한신 더휴 (전용 84㎡) - 최근 12개월 실거래가</h1>
+  <table border="1" cellpadding="5">
+    <tr><th>계약일</th><th>아파트</th><th>면적(㎡)</th><th>거래금액(만원)</th><th>층</th></tr>
+    {% for d in deals %}
+    <tr>
+      <td>{{ d.date }}</td>
+      <td>{{ d.apartment }}</td>
+      <td>{{ d.area }}</td>
+      <td>{{ d.price }}</td>
+      <td>{{ d.floor }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  <p><a href="/">홈으로 돌아가기</a></p>
+</body>
+</html>
